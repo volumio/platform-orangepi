@@ -3,15 +3,20 @@
 This repo contains platform specific files used by the Volumio Builder to create **OrangePi** images:
 
 The kernel, modules, firmware and u-boot files are created from armbian using the mainline kernel.
-There is a dtb overlay to enable the i2s0 connection for pcm audio devices.
-
-kernel repo is from `git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git` branch `linux-4.14.y`
+There is a dtb overlay to enable the i2s0 connection for pcm5102a audio devices.
 
 Currently supported OrangePi devices are
 * OrangePi One
 * OrangePi Lite
 
-## Creating a new platform
+## Kernel Sources
+Kernel sources ar from `git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git` branch `linux-4.14.y`
+
+Firmware sources are from `https://github.com/armbian/firmware` branch `master`
+
+U-Boot sources are from `git://git.denx.de/u-boot.git` the `2017.11` tag
+
+## Creating/Updating a platform archive
 
 Clone the armbian repository as a sibling to this directory
 ```bash
