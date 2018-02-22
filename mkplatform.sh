@@ -40,6 +40,7 @@ logo=disabled
 console=both
 disp_mode=1920x1080p60
 overlay_prefix=sun8i-h3
+overlays=i2c0
 rootdev=/dev/mmcblk0p2
 rootfstype=ext4
 user_overlays=sun8i-h3-i2s0
