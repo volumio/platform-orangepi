@@ -8,6 +8,7 @@ There is a dtb overlay to enable the i2s0 connection for pcm5102a audio devices.
 Currently supported OrangePi devices are
 * OrangePi One
 * OrangePi Lite
+* OrangePi PC
 
 ## Kernel Sources
 Kernel sources ar from `git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git` branch `linux-4.14.y`
@@ -24,3 +25,5 @@ git clone https://github.com/armbian/build ../armbian
 ./mkplatform.sh lite
 ```
 
+## Changelog
+- Update to armbian build with kernel 4.14.34
