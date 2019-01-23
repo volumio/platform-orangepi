@@ -26,4 +26,8 @@ git clone https://github.com/armbian/build ../armbian
 ```
 
 ## Changelog
+23 Jan 19
+- update to armbian build 4.19.13
+
+18 Apr 18
 - Update to armbian build with kernel 4.14.34

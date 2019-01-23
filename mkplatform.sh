@@ -6,6 +6,7 @@ P=orangepi$1
 cp kernel-sunxi-next.patch ${A}/userpatches/kernel/sunxi-next/
 cp ${A}/config/kernel/linux-sunxi-next.config ${A}/userpatches
 cd ${A}
+
 patch -p0 < ${C}/config.patch
 ./compile.sh KERNEL_ONLY=yes BOARD=${P} BRANCH=next RELEASE=jessie KERNEL_CONFIGURE=no EXTERNAL=yes BUILD_KSRC=no BUILD_DESKTOP=no
 
