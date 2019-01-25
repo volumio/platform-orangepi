@@ -11,7 +11,7 @@ Currently supported OrangePi devices are
 * OrangePi PC
 
 ## Kernel Sources
-Kernel sources ar from `git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git` branch `linux-4.14.y`
+Kernel sources ar from `git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git` branch `linux-4.19.y`
 
 Firmware sources are from `https://github.com/armbian/firmware` branch `master`
 
@@ -26,8 +26,8 @@ git clone https://github.com/armbian/build ../armbian
 ```
 
 ## Changelog
-23 Jan 19
-- update to armbian build 4.19.13
+24 Jan 19
+- update to armbian build 4.19.17
 
 18 Apr 18
 - Update to armbian build with kernel 4.14.34
