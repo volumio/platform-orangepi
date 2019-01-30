@@ -48,4 +48,10 @@ user_overlays=sun8i-h3-i2s0
 usbstoragequirks=0x2537:0x1066:u,0x2537:0x1068:u
 extraargs=imgpart=/dev/mmcblk0p2 imgfile=/volumio_current.sqsh" >> ${P}/boot/armbianEnv.txt
 
+case $1 in
+'pc' | 'zero')
+  sed -i "s/i2c0/i2c0 analog-codec/" ${P}/boot/armbianEnv.txt
+  ;;
+esac
+
 tar cJf $P.tar.xz $P
