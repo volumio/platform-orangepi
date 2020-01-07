@@ -2,27 +2,27 @@
 C=`pwd`
 A=../armbian
 P=orangepi$1
+B=legacy
 
-cp kernel-sunxi-next.patch ${A}/userpatches/kernel/sunxi-next/
-cp ${A}/config/kernel/linux-sunxi-next.config ${A}/userpatches
+cp kernel-sunxi-legacy.patch ${A}/userpatches/kernel/sunxi-next/
+cp ${A}/config/kernel/linux-sunxi-legacy.config ${A}/userpatches
 cd ${A}
 
-patch -p0 < ${C}/config.patch
-./compile.sh KERNEL_ONLY=yes BOARD=${P} BRANCH=next RELEASE=jessie KERNEL_CONFIGURE=no EXTERNAL=yes BUILD_KSRC=no BUILD_DESKTOP=no
+./compile.sh KERNEL_ONLY=yes BOARD=${P} BRANCH=${B} RELEASE=jessie KERNEL_CONFIGURE=no EXTERNAL=yes BUILD_KSRC=no BUILD_DESKTOP=no
 
 cd ${C}
 rm -rf ${P}
 mkdir ${P}
 mkdir ${P}/u-boot
 
-dpkg-deb -x ${A}/output/debs/linux-dtb-next-sunxi_* ${P}
-dpkg-deb -x ${A}/output/debs/linux-image-next-sunxi_* ${P}
-dpkg-deb -x ${A}/output/debs/linux-u-boot-next-${P}_* ${P}
+dpkg-deb -x ${A}/output/debs/linux-dtb-${B}-sunxi_* ${P}
+dpkg-deb -x ${A}/output/debs/linux-image-${B}-sunxi_* ${P}
+dpkg-deb -x ${A}/output/debs/linux-u-boot-${B}-${P}_* ${P}
 mkdir ${P}/lib/firmware
 git clone https://github.com/armbian/firmware ${P}/lib/firmware
 rm -rf ${P}/lib/firmware/.git
 
-cp ${P}/usr/lib/linux-u-boot-next-*/u-boot-sunxi-with-spl.bin ${P}/u-boot
+cp ${P}/usr/lib/linux-u-boot-${B}-*/u-boot-sunxi-with-spl.bin ${P}/u-boot
 
 rm -rf ${P}/usr ${P}/etc
 
@@ -34,7 +34,7 @@ cp sun8i-h3-i2s0.* ${P}/boot/overlay-user
 
 cp ${A}/config/bootscripts/boot-sunxi.cmd ${P}/boot/boot.cmd
 mkimage -c none -A arm -T script -d ${P}/boot/boot.cmd ${P}/boot/boot.scr
-touch ${P}/boot/.next
+touch ${P}/boot/.${B}
 
 echo "verbosity=1
 logo=disabled
