@@ -21,7 +21,7 @@ cd ${A}
 
 echo Building for OrangePi $ver -- with armbain $ARMBIAN_VERSION -- $B
 
-#./compile.sh KERNEL_ONLY=yes BOARD=${P} BRANCH=${B} RELEASE=buster KERNEL_CONFIGURE=no EXTERNAL=yes BUILD_KSRC=no BUILD_DESKTOP=no
+./compile.sh KERNEL_ONLY=yes BOARD=${P} BRANCH=${B} RELEASE=buster KERNEL_CONFIGURE=no EXTERNAL=yes BUILD_KSRC=no BUILD_DESKTOP=no
 
 echo "Done!"
 
