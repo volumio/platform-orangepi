@@ -12,8 +12,9 @@ B=current
 ARMBIAN_VERSION=$(cat ${A}/VERSION)
 
 # Shouldn't be needed anymore
-# cp kernel-sunxi-legacy.patch ${A}/userpatches/kernel/sunxi-legacy/
+# cp patches/kernel-sunxi-legacy.patch ${A}/userpatches/kernel/sunxi-legacy/
 # cp ${A}/config/kernel/linux-sunxi-legacy.config ${A}/userpatches
+
 cd ${A}
 ARMBIAN_HASH=$(git rev-parse --short HEAD)
 echo "Building for OrangePi ${ver} -- with Armbian ${ARMBIAN_VERSION} -- $B"
@@ -49,7 +50,7 @@ rm -rf "${P:?}/usr" "${P:?}/etc"
 for dts in "${C}"/overlays/*.dts; do
   dts_file=${dts%%.*}
   echo "Compiling ${dts_file}"
-  dtc -O dtb -o "${dts_file}.dts" "${dts_file}.dtbo"
+  dtc -O dtb -o "${dts_file}.dtbo" "${dts_file}.dts"
   cp "${dts_file}".{dts,dtbo} "${P}"/boot/overlay-user
 done
 
