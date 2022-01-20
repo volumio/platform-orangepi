@@ -1,33 +1,31 @@
 # platform-orangepi
 
-This repo contains platform specific files used by the Volumio Builder to create **OrangePi** images:
-
-The kernel, modules, firmware and u-boot files are created from armbian using the mainline kernel.
-There is a dtb overlay to enable the i2s0 connection for pcm5102a audio devices.
+This repo contains platform specific files used by the Volumio Builder to create **OrangePi** Allwinner H3 based images:
 
 Currently supported OrangePi devices are
 * OrangePi One
 * OrangePi Lite
 * OrangePi PC
+* OrangePi Zero
 
 ## Kernel Sources
-Kernel sources ar from `git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git` branch `linux-4.19.y`
 
-Firmware sources are from `https://github.com/armbian/firmware` branch `master`
-
-U-Boot sources are from `git://git.denx.de/u-boot.git` the `2017.11` tag
-
-## Creating/Updating a platform archive
-
-Clone the armbian repository as a sibling to this directory
-```bash
-git clone https://github.com/armbian/build ../armbian
-./mkplatform.sh lite
-```
+| Type         | Source                                                          | Version          |
+| :----------- | :-------------------------------------------------------------- | :--------------- |
+| U-Boot       | [u-boot/u-boot.git](https://source.denx.de/u-boot/u-boot.git)   | `2020.10`        |
+| Kernel       | [megous/linux.git](https://megous.com/git/linux)                | `orange-pi-5.10` |
+| Firmware     | [armbian/firmware.git](https://github.com/armbian/firmware.git) | `master`         |
+| Build System | [armbian/build](https://github.com/armbian/build.git)           | `master`         |
 
 ## Changelog
-24 Jan 19
-- update to armbian build 4.19.17
+Feb 07 2021 
+- Update to kernel 5.10.yy
 
-18 Apr 18
-- Update to armbian build with kernel 4.14.34
+Feb 28 2020
+- Update to kernel 5.4.yy
+  
+Jan 24 2019
+- Update to kernel 4.19.17
+
+Apr 18 2018
+- Update to kernel 4.14.34
