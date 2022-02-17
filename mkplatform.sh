@@ -3,6 +3,13 @@ set -eo pipefail
 
 # Default to lite
 ver="${1:-lite}"
+[[ $# -ge 1 ]] && shift 1
+if [[ $# -ge 0 ]]; then
+  armbian_extra_falgs=("$@")
+  echo "Passing additional args to Armbian ${armbian_extra_falgs[*]}"
+else
+  armbian_extra_falgs=("")
+fi
 
 C=$(pwd)
 A=../../armbian
@@ -11,18 +18,20 @@ B=current
 # Make sure we grab the right version
 ARMBIAN_VERSION=$(cat ${A}/VERSION)
 
-# Shouldn't be needed anymore
-# cp patches/kernel-sunxi-legacy.patch ${A}/userpatches/kernel/sunxi-legacy/
-# cp ${A}/config/kernel/linux-sunxi-legacy.config ${A}/userpatches
+# Custom patches
+echo "Adding custom patches"
+ls "${C}/patches/"
+cp "${C}/patches/"*.patch ${A}/userpatches/kernel/sunxi-current/
 
 cd ${A}
 ARMBIAN_HASH=$(git rev-parse --short HEAD)
 echo "Building for OrangePi ${ver} -- with Armbian ${ARMBIAN_VERSION} -- $B"
+./compile.sh docker KERNEL_ONLY=yes BOARD="${P}" BRANCH=${B} RELEASE=buster KERNEL_CONFIGURE=no EXTERNAL=yes BUILD_KSRC=no BUILD_DESKTOP=no "${armbian_extra_falgs[@]}"
 
-./compile.sh docker KERNEL_ONLY=yes BOARD="${P}" BRANCH=${B} RELEASE=buster KERNEL_CONFIGURE=no EXTERNAL=yes BUILD_KSRC=no BUILD_DESKTOP=no
 echo "Done!"
 
 cd "${C}"
+echo "Creating platform ${P} files"
 [[ -d ${P} ]] && rm -rf "${P}"
 mkdir -p "${P}/u-boot"
 mkdir -p "${P}/lib/firmware"
@@ -34,7 +43,9 @@ dpkg-deb -x "${A}/output/debs/linux-dtb-${B}-sunxi_${ARMBIAN_VERSION}"_* "${P}"
 dpkg-deb -x "${A}/output/debs/linux-image-${B}-sunxi_${ARMBIAN_VERSION}"_* "${P}"
 dpkg-deb -x "${A}/output/debs/linux-u-boot-${B}-${P}_${ARMBIAN_VERSION}"_* "${P}"
 
-git clone --depth 1 https://github.com/armbian/firmware "${P}/lib/firmware"
+# Use prepared deb instead
+dpkg-deb -x "${A}/output/debs/armbian-firmware_${ARMBIAN_VERSION}"_* "${P}"
+# git clone --depth 1 https://github.com/armbian/firmware "${P}/lib/firmware"
 
 # Copy bootloader stuff
 cp "${P}"/usr/lib/linux-u-boot-${B}-*/u-boot-sunxi-with-spl.bin "${P}/u-boot"
@@ -51,9 +62,8 @@ for dts in "${C}"/overlays/*.dts; do
   dts_file=${dts%%.*}
   echo "Compiling ${dts_file}"
   dtc -O dtb -o "${dts_file}.dtbo" "${dts_file}.dts"
-  cp "${dts_file}".{dts,dtbo} "${P}"/boot/overlay-user
 done
-
+cp "${C}"/overlays/*.dtbo "${P}"/boot/overlay-user
 cp ${A}/config/bootscripts/boot-sunxi.cmd "${P}"/boot/boot.cmd
 touch "${P}"/boot/.next # Signal mainline kernel
 mkimage -c none -A arm -T script -d "${P}"/boot/boot.cmd "${P}"/boot/boot.scr

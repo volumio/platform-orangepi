@@ -1,0 +1,388 @@
+diff --git a/sound/soc/codecs/wm8804.c b/sound/soc/codecs/wm8804.c
+index 4ddb5e32d..5cf6a8177 100644
+--- a/sound/soc/codecs/wm8804.c
++++ b/sound/soc/codecs/wm8804.c
+@@ -5,6 +5,17 @@
+  * Copyright 2010-11 Wolfson Microelectronics plc
+  *
+  * Author: Dimitris Papastamos <dp@opensource.wolfsonmicro.com>
++ *
++ * 2021.03  <maciej_lomozik@poczta.onet.pl> Some minor touches to make it work in software mode. 
++ * Mainly for volumio support with simple-audio-card in armbian without another machine driver. 
++ * For all that wm8804 raspberry hats with no logic. Just IC with xtal, pinheader and TOSLINK interface
++ * Tested in master mode with orangepi one and armbian. Not tested in software mode (orangepi one has no mclk output).
++ * Some initialization parameters should be passed via dts file. 
++ * XTAL frequency as "oscclk" as passing it in _set_sysclk in ambiguouse 
++ * presence of external mclk as "ext_mclk" and clk id as "clk_id" because simple-audio-card
++ * uses hardcoded 0 in _set_sysclk which ends up in error in initialization. 
++ *
++ *
+  */
+ 
+ #include <linux/module.h>
+@@ -66,6 +77,10 @@ struct wm8804_priv {
+ 	struct gpio_desc *reset;
+ 
+ 	int aif_pwr;
++	unsigned int oscclk;
++	unsigned int mclk_freq;
++	bool ext_mclk;
++	int clk_id;
+ };
+ 
+ static int txsrc_put(struct snd_kcontrol *kcontrol,
+@@ -182,8 +197,8 @@ static int txsrc_put(struct snd_kcontrol *kcontrol,
+ 
+ 		/* restore the transmitter's configuration */
+ 		snd_soc_component_update_bits(component, WM8804_PWRDN, 0x4, txpwr);
++	
+ 	}
+-
+ 	snd_soc_dapm_mutex_unlock(dapm);
+ 
+ 	return 0;
+@@ -213,12 +228,27 @@ static int wm8804_soft_reset(struct wm8804_priv *wm8804)
+ 	return regmap_write(wm8804->regmap, WM8804_RST_DEVID1, 0x0);
+ }
+ 
++
++
++
++static void wm8804_shutdown(struct snd_pcm_substream *substream, struct snd_soc_dai *dai)
++{
++		struct snd_soc_component *component = dai->component;
++//		/* turn off digital output 
++		snd_soc_component_update_bits(component, WM8804_PWRDN, 0x04, 0x04);
++}
++
++
++
++
+ static int wm8804_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
+ {
+ 	struct snd_soc_component *component;
++	struct wm8804_priv *wm8804;
+ 	u16 format, master, bcp, lrp;
+ 
+ 	component = dai->component;
++	wm8804 = snd_soc_component_get_drvdata(component);
+ 
+ 	switch (fmt & SND_SOC_DAIFMT_FORMAT_MASK) {
+ 	case SND_SOC_DAIFMT_I2S:
+@@ -242,13 +272,13 @@ static int wm8804_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
+ 	/* set data format */
+ 	snd_soc_component_update_bits(component, WM8804_AIFTX, 0x3, format);
+ 	snd_soc_component_update_bits(component, WM8804_AIFRX, 0x3, format);
+-
+ 	switch (fmt & SND_SOC_DAIFMT_MASTER_MASK) {
+ 	case SND_SOC_DAIFMT_CBM_CFM:
+ 		master = 1;
+ 		break;
+ 	case SND_SOC_DAIFMT_CBS_CFS:
+ 		master = 0;
++		if (!wm8804->ext_mclk) dev_info(dai->dev, "In Slave mode external mclk is needed for SPDIF transmitter which was not declared in DT \n");
+ 		break;
+ 	default:
+ 		dev_err(dai->dev, "Unknown master/slave configuration\n");
+@@ -257,7 +287,6 @@ static int wm8804_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
+ 
+ 	/* set master/slave mode */
+ 	snd_soc_component_update_bits(component, WM8804_AIFRX, 0x40, master << 6);
+-
+ 	bcp = lrp = 0;
+ 	switch (fmt & SND_SOC_DAIFMT_INV_MASK) {
+ 	case SND_SOC_DAIFMT_NB_NF:
+@@ -284,37 +313,8 @@ static int wm8804_set_fmt(struct snd_soc_dai *dai, unsigned int fmt)
+ 	return 0;
+ }
+ 
+-static int wm8804_hw_params(struct snd_pcm_substream *substream,
+-			    struct snd_pcm_hw_params *params,
+-			    struct snd_soc_dai *dai)
+-{
+-	struct snd_soc_component *component;
+-	u16 blen;
+ 
+-	component = dai->component;
+ 
+-	switch (params_width(params)) {
+-	case 16:
+-		blen = 0x0;
+-		break;
+-	case 20:
+-		blen = 0x1;
+-		break;
+-	case 24:
+-		blen = 0x2;
+-		break;
+-	default:
+-		dev_err(dai->dev, "Unsupported word length: %u\n",
+-			params_width(params));
+-		return -EINVAL;
+-	}
+-
+-	/* set word length */
+-	snd_soc_component_update_bits(component, WM8804_AIFTX, 0xc, blen << 2);
+-	snd_soc_component_update_bits(component, WM8804_AIFRX, 0xc, blen << 2);
+-
+-	return 0;
+-}
+ 
+ struct pll_div {
+ 	u32 prescale:1;
+@@ -430,18 +430,21 @@ static int wm8804_set_pll(struct snd_soc_dai *dai, int pll_id,
+ 		/* set PLLN and PRESCALE */
+ 		snd_soc_component_update_bits(component, WM8804_PLL4, 0xf | 0x10,
+ 				    pll_div.n | (pll_div.prescale << 4));
++		
+ 		/* set mclkdiv and freqmode */
+ 		snd_soc_component_update_bits(component, WM8804_PLL5, 0x3 | 0x8,
+ 				    pll_div.freqmode | (pll_div.mclkdiv << 3));
++		
+ 		/* set PLLK */
+ 		snd_soc_component_write(component, WM8804_PLL1, pll_div.k & 0xff);
+ 		snd_soc_component_write(component, WM8804_PLL2, (pll_div.k >> 8) & 0xff);
+ 		snd_soc_component_write(component, WM8804_PLL3, pll_div.k >> 16);
+ 
++		
++		
+ 		/* power up the PLL */
+ 		snd_soc_component_update_bits(component, WM8804_PWRDN, 0x1, 0);
+ 	}
+-
+ 	return 0;
+ }
+ 
+@@ -449,19 +452,16 @@ static int wm8804_set_sysclk(struct snd_soc_dai *dai,
+ 			     int clk_id, unsigned int freq, int dir)
+ {
+ 	struct snd_soc_component *component;
++	struct wm8804_priv *wm8804;
+ 
+-	component = dai->component;
+ 
++
++	component = dai->component;
++	wm8804 = snd_soc_component_get_drvdata(component);
++	if (!clk_id) clk_id = wm8804->clk_id ;
+ 	switch (clk_id) {
+ 	case WM8804_TX_CLKSRC_MCLK:
+-		if ((freq >= 10000000 && freq <= 14400000)
+-				|| (freq >= 16280000 && freq <= 27000000))
+-			snd_soc_component_update_bits(component, WM8804_PLL6, 0x80, 0x80);
+-		else {
+-			dev_err(dai->dev, "OSCCLOCK is not within the "
+-				"recommended range: %uHz\n", freq);
+-			return -EINVAL;
+-		}
++		snd_soc_component_update_bits(component, WM8804_PLL6, 0x80, 0x80);
+ 		break;
+ 	case WM8804_TX_CLKSRC_PLL:
+ 		snd_soc_component_update_bits(component, WM8804_PLL6, 0x80, 0);
+@@ -476,7 +476,6 @@ static int wm8804_set_sysclk(struct snd_soc_dai *dai,
+ 		dev_err(dai->dev, "Unknown clock source: %d\n", clk_id);
+ 		return -EINVAL;
+ 	}
+-
+ 	return 0;
+ }
+ 
+@@ -503,12 +502,100 @@ static int wm8804_set_clkdiv(struct snd_soc_dai *dai,
+ 	return 0;
+ }
+ 
++
++static int wm8804_hw_params(struct snd_pcm_substream *substream,
++                            struct snd_pcm_hw_params *params,
++                            struct snd_soc_dai *dai)
++{
++        struct snd_soc_component *component = dai->component;
++        u16 blen;
++	int samplerate;
++        int sampling_freq;
++
++
++	struct wm8804_priv *wm8804 = snd_soc_component_get_drvdata(component);
++
++
++        switch (params_width(params)) {
++        case 16:
++                blen = 0x0;
++                break;
++        case 20:
++                blen = 0x1;
++                break;
++        case 24:
++                blen = 0x2;
++                break;
++        default:
++                dev_err(dai->dev, "Unsupported word length: %u\n",
++                        params_width(params));
++                return -EINVAL;
++        }
++
++        /* set word length */
++        snd_soc_component_update_bits(component, WM8804_AIFTX, 0xc, blen << 2);
++        snd_soc_component_update_bits(component, WM8804_AIFRX, 0xc, blen << 2);
++
++       samplerate = params_rate(params);
++
++        switch (samplerate) {
++        case 32000:
++                sampling_freq = 0x03;
++                break;
++        case 44100:
++                sampling_freq = 0x00;
++                break;
++        case 48000:
++                sampling_freq = 0x02;
++                break;
++        case 88200:
++                sampling_freq = 0x08;
++                break;
++        case 96000:
++                sampling_freq = 0x0a;
++                break;
++        case 176400:
++                sampling_freq = 0x0c;
++                break;
++        case 192000:
++                sampling_freq = 0x0e;
++                break;
++        default:
++                dev_err(dai->dev, "Trying to set unsupported samplerate %d\n",
++                        samplerate);
++		return -EINVAL;
++        }
++	snd_soc_component_update_bits(component, WM8804_SPDTX4, 0x0f, sampling_freq);
++
++	if (snd_soc_component_read(component, WM8804_AIFRX) & 0x40) // check if  we are master
++	 {
++	         snd_soc_component_update_bits(component, WM8804_PWRDN, 0x2, 0x2);  // shutting down SPDIF RX to have PLL in USER MODE. 
++	       if (samplerate <= 96000) {
++	                wm8804->mclk_freq = samplerate * 256;
++	                wm8804->mclk_div = WM8804_MCLKDIV_256FS;
++			        } 
++		else {
++	                wm8804->mclk_freq = samplerate * 128;
++	                wm8804->mclk_div = WM8804_MCLKDIV_128FS;
++	            }
++
++                wm8804_set_pll(dai, 0,0,wm8804->oscclk,wm8804->mclk_freq);
++        }
++	else {
++		if  (!wm8804->ext_mclk) dev_info(dai->dev, "well, in Slave mode  with DAI as source we need external mclk which is not set in DT. If so you will hear silence \n");
++	}
++	snd_soc_component_update_bits(component, WM8804_PWRDN, 0x04, 0);
++        return 0;
++}
++
++
+ static const struct snd_soc_dai_ops wm8804_dai_ops = {
+ 	.hw_params = wm8804_hw_params,
+ 	.set_fmt = wm8804_set_fmt,
+ 	.set_sysclk = wm8804_set_sysclk,
+ 	.set_clkdiv = wm8804_set_clkdiv,
+-	.set_pll = wm8804_set_pll
++	.set_pll = wm8804_set_pll,
++	.shutdown = wm8804_shutdown
+ };
+ 
+ #define WM8804_FORMATS (SNDRV_PCM_FMTBIT_S16_LE | SNDRV_PCM_FMTBIT_S20_3LE | \
+@@ -562,11 +649,26 @@ const struct regmap_config wm8804_regmap_config = {
+ };
+ EXPORT_SYMBOL_GPL(wm8804_regmap_config);
+ 
++
++
++
++
+ int wm8804_probe(struct device *dev, struct regmap *regmap)
+ {
+ 	struct wm8804_priv *wm8804;
+ 	unsigned int id1, id2;
+ 	int i, ret;
++	const char *of_string;
++	struct wm8804_clk_id_tab {
++	char	*str;
++	int	val;
++	};
++static const struct wm8804_clk_id_tab wm8804_clk_id[] = {
++	{ .str = "WM8804_TX_CLKSRC_MCLK", .val = WM8804_TX_CLKSRC_MCLK },
++	{ .str = "WM8804_TX_CLKSRC_PLL",  .val = WM8804_TX_CLKSRC_PLL },
++	{ .str = "WM8804_CLKOUT_SRC_CLK1", .val = WM8804_CLKOUT_SRC_CLK1 },
++	{ .str = "WM8804_CLKOUT_SRC_OSCCLK", .val = WM8804_CLKOUT_SRC_OSCCLK },
++	};	
+ 
+ 	wm8804 = devm_kzalloc(dev, sizeof(*wm8804), GFP_KERNEL);
+ 	if (!wm8804)
+@@ -664,10 +766,44 @@ int wm8804_probe(struct device *dev, struct regmap *regmap)
+ 		goto err_reg_enable;
+ 	}
+ 
++	wm8804->ext_mclk = false;
++
++	if (dev->of_node)
++	{
++	if (of_property_read_bool(dev->of_node, "external_mclk"))
++		wm8804->ext_mclk = true;
++	
++	if (of_property_read_u32(dev->of_node, "oscclk", &(wm8804->oscclk)) < 0)
++		dev_err(dev, "OSCCLK not set via DT \n");
++	 else 
++		 
++		if ((wm8804->oscclk >= 10000000 && wm8804->oscclk <= 14400000)
++                                || (wm8804->oscclk >= 16280000 && wm8804->oscclk <= 27000000))
++                       dev_info(dev, "OSCCLK frequency set via DT to %u MHz\n",wm8804->oscclk);
++                else {
++                        dev_err(dev, "OSCCLOCK set via DT is not within the "
++                                "recommended range: %uHz\n", wm8804->oscclk);
++                        return -EINVAL;
++
++			}	
++
++
++	if (!of_property_read_string(dev->of_node, "clk_id", &of_string))
++		for (i = 0 ; i < ARRAY_SIZE(wm8804_clk_id); i++)
++		{ if (!strcmp(of_string, wm8804_clk_id[i].str))
++			{	wm8804->clk_id = wm8804_clk_id[i].val; 	
++				break;
++			}
++			if ( i == ARRAY_SIZE(wm8804_clk_id)-1 ) dev_err(dev, "Unknown CLK_ID in DT  \n");
++		}
++	
++	else 
++		dev_err(dev, "CLK_ID not define. it will end up in error when clk_id will not be provided by _set_sysclk \n");
++	
++	}
+ 	pm_runtime_set_active(dev);
+ 	pm_runtime_enable(dev);
+ 	pm_runtime_idle(dev);
+-
+ 	return 0;
+ 
+ err_reg_enable:
+@@ -699,7 +835,6 @@ static int wm8804_runtime_resume(struct device *dev)
+ 
+ 	/* Power up OSCCLK */
+ 	regmap_update_bits(wm8804->regmap, WM8804_PWRDN, 0x8, 0x0);
+-
+ 	return 0;
+ }
+ 
+@@ -712,7 +847,6 @@ static int wm8804_runtime_suspend(struct device *dev)
+ 
+ 	regulator_bulk_disable(ARRAY_SIZE(wm8804->supplies),
+ 			       wm8804->supplies);
+-
+ 	return 0;
+ }
+ #endif
+@@ -722,6 +856,6 @@ const struct dev_pm_ops wm8804_pm = {
+ };
+ EXPORT_SYMBOL_GPL(wm8804_pm);
+ 
+-MODULE_DESCRIPTION("ASoC WM8804 driver");
++MODULE_DESCRIPTION("ASoC WM8804 driver with mods for Software mode ");
+ MODULE_AUTHOR("Dimitris Papastamos <dp@opensource.wolfsonmicro.com>");
+ MODULE_LICENSE("GPL");
