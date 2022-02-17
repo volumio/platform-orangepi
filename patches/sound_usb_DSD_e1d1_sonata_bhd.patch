@@ -1,0 +1,15 @@
+diff --git a/sound/usb/quirks.c b/sound/usb/quirks.c
+index ab9f3da49..7b491e15a 100644
+--- a/sound/usb/quirks.c
++++ b/sound/usb/quirks.c
+@@ -1941,6 +1946,10 @@ static const struct usb_audio_quirk_flags_table quirk_flags_table[] = {
+ 		   QUIRK_FLAG_DSD_RAW),
+ 	VENDOR_FLG(0xc502, /* HiBy devices */
+ 		   QUIRK_FLAG_DSD_RAW),
++	VENDOR_FLG(0x2fc6, /* E1DA #9038D  */
++		   QUIRK_FLAG_DSD_RAW),
++	VENDOR_FLG(0x22e1, /* TempoTec Sonata BHD */
++		   QUIRK_FLAG_DSD_RAW),
+ 
+ 	{} /* terminator */
+ };
