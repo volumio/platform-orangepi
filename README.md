@@ -12,12 +12,16 @@ Currently supported OrangePi devices are
 
 | Type         | Source                                                          | Version          |
 | :----------- | :-------------------------------------------------------------- | :--------------- |
-| U-Boot       | [u-boot/u-boot.git](https://source.denx.de/u-boot/u-boot.git)   | `2020.10`        |
+| U-Boot       | [u-boot/u-boot.git](https://source.denx.de/u-boot/u-boot.git)   | `2022.07`        |
 | Kernel       | [megous/linux.git](https://megous.com/git/linux)                | `orange-pi-5.15` |
 | Firmware     | [armbian/firmware.git](https://github.com/armbian/firmware.git) | `master`         |
 | Build System | [armbian/build](https://github.com/armbian/build.git)           | `master`         |
 
 ## Changelog
+Jan 01 2023
+- Update to kernel 5.15.85 and uboot 2022.07
+- Predictable names on WiFi interfaces
+
 Feb 17 2022
 - Update to kernel 5.15.yy
 - Add support for WM8809 (@mafiulo)
