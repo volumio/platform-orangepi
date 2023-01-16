@@ -1,14 +1,14 @@
 #!/bin/bash
 set -eo pipefail
 
-# Default to lite
-ver="${1:-lite}"
+# Default to One
+ver="${1:-one}"
 [[ $# -ge 1 ]] && shift 1
 if [[ $# -ge 0 ]]; then
-  armbian_extra_falgs=("$@")
-  echo "Passing additional args to Armbian ${armbian_extra_falgs[*]}"
+  armbian_extra_flags=("$@")
+  echo "Passing additional args to Armbian ${armbian_extra_flags[*]}"
 else
-  armbian_extra_falgs=("")
+  armbian_extra_flags=("")
 fi
 
 C=$(pwd)
@@ -21,12 +21,13 @@ ARMBIAN_VERSION=$(cat ${A}/VERSION)
 # Custom patches
 echo "Adding custom patches"
 ls "${C}/patches/"
+mkdir -p ${A}/userpatches/kernel/sunxi-current/
 cp "${C}/patches/"*.patch ${A}/userpatches/kernel/sunxi-current/
 
 cd ${A}
 ARMBIAN_HASH=$(git rev-parse --short HEAD)
 echo "Building for OrangePi ${ver} -- with Armbian ${ARMBIAN_VERSION} -- $B"
-./compile.sh docker KERNEL_ONLY=yes BOARD="${P}" BRANCH=${B} RELEASE=buster KERNEL_CONFIGURE=no EXTERNAL=yes BUILD_KSRC=no BUILD_DESKTOP=no "${armbian_extra_falgs[@]}"
+./compile.sh docker KERNEL_ONLY=yes BOARD="${P}" BRANCH=${B} RELEASE=buster KERNEL_CONFIGURE=no EXTERNAL=yes BUILD_KSRC=no BUILD_DESKTOP=no "${armbian_extra_flags[@]}"
 
 echo "Done!"
 
@@ -83,7 +84,7 @@ rootdev=/dev/mmcblk0p2
 rootfstype=ext4
 user_overlays=sun8i-h3-i2s0
 usbstoragequirks=0x2537:0x1066:u,0x2537:0x1068:u
-extraargs=imgpart=/dev/mmcblk0p2 imgfile=/volumio_current.sqsh
+extraargs=imgpart=/dev/mmcblk0p2 imgfile=/volumio_current.sqsh net.ifnames=0
 EOF
 
 echo "Creating device tarball.."
