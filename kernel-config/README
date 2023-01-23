@@ -1,0 +1,3 @@
+Volumio specific settings
+
+CONFIG_SQUASHFS_XATTR=n
