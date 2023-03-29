@@ -48,7 +48,7 @@ cd ${A}
 ARMBIAN_HASH=$(git rev-parse --short HEAD)
 echo "Building for $P -- with Armbian ${ARMBIAN_VERSION} -- $B"
 
-./compile.sh BOARD="${T}" BRANCH="${B}" RELEASE=buster KERNEL_CONFIGURE=no EXTERNAL=yes BUILD_KSRC=no BUILD_DESKTOP=no BUILD_ONLY=u-boot,kernel,armbian-firmware "${armbian_extra_flags[@]}"
+./compile.sh BOARD="${T}" BRANCH="${B}" RELEASE=buster KERNEL_GIT=shallow KERNEL_CONFIGURE=no BUILD_EXTERNAL=yes BUILD_KSRC=no BUILD_DESKTOP=no BUILD_MINIMAL=yes BUILD_ONLY=u-boot,kernel,armbian-firmware "${armbian_extra_flags[@]}"
 
 echo "Done!"
 
