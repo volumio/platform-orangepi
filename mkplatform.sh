@@ -59,12 +59,12 @@ mkdir -p "${P}"/u-boot
 mkdir -p "${P}"/lib/firmware
 mkdir -p "${P}"/boot/overlay-user
 # Keep a copy for later just in case
-cp "${A}/output/debs/linux-headers-${B}-${K}_${ARMBIAN_VERSION}"_* "${C}"
+cp "${A}/output/debs/linux-headers-${B}-${K}_${ARMBIAN_VERSION}"* "${C}"
 
-dpkg-deb -x "${A}/output/debs/linux-dtb-${B}-${K}_${ARMBIAN_VERSION}"_* "${P}"
-dpkg-deb -x "${A}/output/debs/linux-image-${B}-${K}_${ARMBIAN_VERSION}"_* "${P}"
-dpkg-deb -x "${A}/output/debs/linux-u-boot-${B}-${T}_${ARMBIAN_VERSION}"_* "${P}"
-dpkg-deb -x "${A}/output/debs/armbian-firmware_${ARMBIAN_VERSION}"_* "${P}"
+dpkg-deb -x "${A}/output/debs/linux-dtb-${B}-${K}_${ARMBIAN_VERSION}"* "${P}"
+dpkg-deb -x "${A}/output/debs/linux-image-${B}-${K}_${ARMBIAN_VERSION}"* "${P}"
+dpkg-deb -x "${A}/output/debs/linux-u-boot-${T}-${B}_${ARMBIAN_VERSION}"* "${P}"
+dpkg-deb -x "${A}/output/debs/armbian-firmware_${ARMBIAN_VERSION}"* "${P}"
 
 # Copy bootloader stuff
 cp "${P}"/usr/lib/linux-u-boot-${B}-*/u-boot-sunxi-with-spl.bin "${P}/u-boot"
