@@ -12,7 +12,7 @@ else
 fi
 
 C=$(pwd)
-A=../../armbian
+A=../../armbian-master
 P="orangepi${ver}"
 B="current"
 T="orangepi${ver}"
@@ -63,7 +63,7 @@ cp "${A}/output/debs/linux-headers-${B}-${K}_${ARMBIAN_VERSION}"* "${C}"
 
 dpkg-deb -x "${A}/output/debs/linux-dtb-${B}-${K}_${ARMBIAN_VERSION}"* "${P}"
 dpkg-deb -x "${A}/output/debs/linux-image-${B}-${K}_${ARMBIAN_VERSION}"* "${P}"
-dpkg-deb -x "${A}/output/debs/linux-u-boot-${T}-${B}_${ARMBIAN_VERSION}"* "${P}"
+dpkg-deb -x "${A}/output/debs/linux-u-boot-${B}-${T}_${ARMBIAN_VERSION}"* "${P}"
 dpkg-deb -x "${A}/output/debs/armbian-firmware_${ARMBIAN_VERSION}"* "${P}"
 
 # Copy bootloader stuff
@@ -99,8 +99,8 @@ overlays=("i2c0")
 [[ ${ver} == "pc" || ${ver} == "zero" ]] && overlays+=("analog-codec")
 
 cat <<-EOF >>"${P}/boot/armbianEnv.txt"
-verbosity=8
-logo=disabled
+verbosity=0
+bootlogo=true
 console=both
 disp_mode=1920x1080p60
 overlay_prefix=sun8i-h3
@@ -109,7 +109,7 @@ rootdev=/dev/mmcblk0p2
 rootfstype=ext4
 user_overlays=sun8i-h3-i2s0
 usbstoragequirks=0x2537:0x1066:u,0x2537:0x1068:u
-extraargs=imgpart=/dev/mmcblk0p2 imgfile=/volumio_current.sqsh net.ifnames=0
+extraargs=imgpart=/dev/mmcblk0p2 imgfile=/volumio_current.sqsh net.ifnames=0 hwver=orangepi
 EOF
 
 echo "Creating device tarball.."
