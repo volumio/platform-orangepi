@@ -1,3 +1,4 @@
 Volumio specific settings
 
 CONFIG_SQUASHFS_XATTR=n
+CONFIG_NLS_ISO8859_1=y
