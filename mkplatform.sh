@@ -95,7 +95,7 @@ mkimage -C none -A arm -T script -d "${P}"/boot/boot.cmd "${P}"/boot/boot.scr
 touch "${P}"/boot/.next
 
 # Prepare boot parameters
-overlays=("i2c0")
+overlays=("i2c0" "usbhost0" "usbhost1" "usbhost2" "usbhost3")
 [[ ${ver} == "pc" || ${ver} == "zero" ]] && overlays+=("analog-codec")
 
 cat <<-EOF >>"${P}/boot/armbianEnv.txt"
