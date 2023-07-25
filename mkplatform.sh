@@ -76,6 +76,11 @@ mv "${P}"/boot/vmlinuz* "${P}"/boot/zImage
 rm -rf "${P}/lib/firmware/.git"
 rm -rf "${P:?}/usr" "${P:?}/etc"
 
+# Set USB OTG port to host
+dtc -I dtb -O dts -o "${P}"/boot/dtb/sun8i-h3-orangepi-one.dts "${P}"/boot/dtb/sun8i-h3-orangepi-one.dtb
+sed -i -e 's/dr_mode = "otg";/dr_mode = "host";/g' "${P}"/boot/dtb/sun8i-h3-orangepi-one.dts
+dtc -I dts -O dtb -o "${P}"/boot/dtb/sun8i-h3-orangepi-one.dtb "${P}"/boot/dtb/sun8i-h3-orangepi-one.dts
+
 # Compile and copy over overlay(s) files
 for dts in "${C}"/overlay-user/overlays-"${P}"/*.dts; do
   dts_file=${dts%%.*}
